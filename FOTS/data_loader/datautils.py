@@ -765,13 +765,9 @@ def normalize_iamge(image: np.ndarray, mean=[0.485, 0.456, 0.406], std=[0.229, 0
 def sort_bbox(texts,bboxs):
     texts_concat_bboxs =  [bboxs , texts]
     for i in range(len(texts_concat_bboxs[0])-1):
-        for i in range(len(texts_concat_bboxs[0])-1):
-            if texts_concat_bboxs[0][i][0,1]>texts_concat_bboxs[0][i+1][0,1]:
-                temp= texts_concat_bboxs[0][i]
-                texts_concat_bboxs[0][i]=texts_concat_bboxs[0][i+1]
-                texts_concat_bboxs[0][i+1]= temp
-            elif texts_concat_bboxs[0][i][0,1]>texts_concat_bboxs[0][i+1][0,1]:
-                temp= texts_concat_bboxs[0][i]
-                texts_concat_bboxs[0][i]=texts_concat_bboxs[0][i+1]
-                texts_concat_bboxs[0][i+1]= temp
+        for j in range(len(texts_concat_bboxs[0])-1):
+            if texts_concat_bboxs[0][j][0,1]>texts_concat_bboxs[0][j+1][0,1]:
+                temp= texts_concat_bboxs[0][j+1].copy()
+                texts_concat_bboxs[0][j+1]=texts_concat_bboxs[0][j]
+                texts_concat_bboxs[0][j]= temp
     return texts_concat_bboxs[1],texts_concat_bboxs[0]

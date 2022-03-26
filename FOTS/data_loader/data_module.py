@@ -24,7 +24,7 @@ from .synthtext_dataset import SynthTextDataset
 from .icdar_dataset import ICDARDataset
 from .transforms import Transform
 from .datautils import collate_fn
-
+from sklearn.model_selection import KFold
 
 class SynthTextDataModule(LightningDataModule):
 
@@ -55,10 +55,16 @@ class ICDARDataModule(LightningDataModule):
     def __init__(self, config: EasyDict):
         super(ICDARDataModule, self).__init__()
         self.config = config
+        self.val_index = []
+        self.train_index = []
 
     def setup(self, stage: Optional[str] = None):
-        transform = Transform(is_training=True, output_size=(self.config.data_loader.size,
-                                                             self.config.data_loader.size))
+        if self.config.Transfrom == True:
+          transform = Transform(is_training=True, output_size=(self.config.data_loader.size,
+                                                              self.config.data_loader.size))
+        else:
+          transform = Transform(is_training=False, output_size=(self.config.data_loader.size,
+                                                              self.config.data_loader.size))
         self.train_ds = ICDARDataset(data_root=self.config.data_loader.data_dir + '/train',
                                      transform=transform,
                                      vis=False,
@@ -90,3 +96,7 @@ class ICDARDataModule(LightningDataModule):
                           collate_fn=collate_fn,
                           shuffle=False,
                           pin_memory=False)
+    def cross_validation(self):
+        val_index,train_index = next(KFold(n_splits=10,shuffle=True).split(self.train_ds))
+        self.val_index = val_index
+        self.train_index = train_index

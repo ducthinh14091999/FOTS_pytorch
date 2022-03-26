@@ -28,7 +28,7 @@ from .transforms import Transform
 from ..utils.util import str_label_converter
 from .datautils import check_and_validate_polys, normalize_iamge, sort_bbox
 from . import utils as data_utils
-
+from sklearn.model_selection import KFold
 
 class ICDARDataset(Dataset):
 
@@ -65,6 +65,9 @@ class ICDARDataset(Dataset):
         #         count=0
         #         break
         #     with gt.open(mode='r',encoding='utf-8') as f:
+        # zips = zip(all_images, all_bboxs, all_texts)
+        # kfold=KFold(n_splits=10 ,shuffle=True)
+        # fold = kfold.split(all_images,zip(all_bboxs,all))
         bboxes = []
         texts = []
         last_img=pathlib.Path('F:/project_2/New_folder/data/downloads/094343_b.jpg')
@@ -94,7 +97,6 @@ class ICDARDataset(Dataset):
                     all_images.append(image)
                     bboxes = []
                     texts = []   
-
         return all_images, all_bboxs, all_texts
 
     def visualize(self,
@@ -153,9 +155,8 @@ class ICDARDataset(Dataset):
 
                 if max_tries == 0:
                     #loguru.logger.debug('Max tries has reached.')
-                    return self.__getitem__(np.random.randint(0, len(self)))
-
-            polys = np.stack([poly.coords for poly in text_polys])
+                    return self.__getitem__(np.random.randint(0, len(self)))   
+                polys = np.stack([poly.coords for poly in text_polys])
 
             score_map, geo_map, training_mask, rectangles, rois = data_utils.get_score_geo(im, polys,
                                                                                             np.ones(polys.shape[0]),

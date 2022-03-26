@@ -339,7 +339,7 @@ def get_score_geo(img, vertices, labels, scale, length):
     for i, vertice in enumerate(vertices):
 
         rotated_rects.append(vertice.reshape(4, 2))
-        roi = cv2.minAreaRect(scale * vertice.reshape(4, 2))
+        roi = cv2.minAreaRect((scale * vertice.reshape(4, 2)).astype(np.int32))
         center = roi[0]
         (w, h) = roi[1]
         min_rect_angle = roi[2]
@@ -385,10 +385,23 @@ def get_score_geo(img, vertices, labels, scale, length):
     cv2.fillPoly(score_map, polys, 1)
     return score_map, geo_map, ignored_map, rotated_rects, rois
 if __name__=='__main__':
-    img=np.zeros( [512,512,3])
-    vertices= np.array([[25,56,106,58,126,38,24,38],[55,86,86,88,86,68,54,68]])
-    labels = np.array([34,0,7,8,9,3,0,0])
-    score_map, geo_map, ignored_map, rotated_rects, rois= get_score_geo(img, vertices, labels, 1, 512)
+    img = cv2.imread("F:/project_2/New_folder/data/downloads/7e3c00ff85bb6ce535aa.jpg")
+    h,w = img.shape[:2]
+    img = cv2.resize(img,(640,640))
+    vertices= []
+    labels = []
+    count = 0
+    
+    with open('C:/Users/thinh/Desktop/example.csv','r',encoding='utf-8') as op:
+        for line in op:
+            bbox = np.int32(line.strip('\n').split(','))
+            bbox[1::2]= bbox[1::2]*640/h
+            bbox[::2]= bbox[::2]*640/w
+            vertices.append(bbox)
+            labels.append(count)
+            count +=1
+    vertices = np.array(vertices)
+    score_map, geo_map, ignored_map, rotated_rects, rois= get_score_geo(img, vertices, labels, 1/4, 640)
     plt.imshow(score_map)
     plt.show()
     plt.imshow(geo_map[:,:,2])

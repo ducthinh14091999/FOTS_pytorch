@@ -116,8 +116,8 @@ class FOTSModel(LightningModule):
             return data
 
         else:
-            score = score_map.detach().cpu().numpy()
-            geometry = geo_map.detach().cpu().numpy()
+            score = score_map.cpu().numpy()
+            geometry = geo_map.cpu().numpy()
 
             pred_boxes = []
             rois = []

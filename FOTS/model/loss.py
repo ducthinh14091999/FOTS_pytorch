@@ -2,8 +2,14 @@ import torch
 import torch.nn as nn
 from torch.nn import CTCLoss
 import einops
-
-from .ghm import GHMC
+if __name__ == "__main__":
+    import sys
+    sys.path.insert(1, 'F:/FOTS.PyTorch/FOTS/data_loader/')
+    sys.path.insert(2,'F:/FOTS.PyTorch/FOTS/model')
+    from ghm import GHMC
+else:
+    pass
+    from .ghm import GHMC
 
 
 
@@ -25,7 +31,8 @@ def get_geo_loss(gt_geo, pred_geo):
     w_union = torch.min(d3_gt, d3_pred) + torch.min(d4_gt, d4_pred)
     h_union = torch.min(d1_gt, d1_pred) + torch.min(d2_gt, d2_pred)
     area_intersect = w_union * h_union
-    area_union = area_gt + area_pred - area_intersect
+    # area_pred = torch.clip(area_pred, min=torch.min(area_intersect), max=torch.max(area_intersect)) 
+    area_union = area_gt  - area_intersect + area_pred
     iou_loss_map = -torch.log((area_intersect + 1.0)/(area_union + 1.0))
     angle_loss_map = 1 - torch.cos(angle_pred - angle_gt)
     return iou_loss_map, angle_loss_map
@@ -152,3 +159,59 @@ class FOTSLoss(nn.Module):
 
         #recognition_loss = recognition_loss.to(detection_loss.device)
         return dict(reg_loss=reg_loss, cls_loss=cls_loss, recog_loss=recognition_loss)
+# if __name__ == "__main__":
+#     img = cv2.imread("F:/project_2/New_folder/data/downloads/7e3c00ff85bb6ce535aa.jpg")
+#     h,w = img.shape[:2]
+#     img = cv2.resize(img,(640,640))
+#     vertices= []
+#     labels = []
+#     count = 0
+    
+#     with open('C:/Users/thinh/Desktop/example.csv','r',encoding='utf-8') as op:
+#         for line in op:
+#             bbox = np.int32(line.strip('\n').split(','))
+#             bbox[1::2]= bbox[1::2]*640/h
+#             bbox[::2]= bbox[::2]*640/w
+#             vertices.append(bbox)
+#             labels.append(count)
+#             count +=1
+#     vertices = np.array(vertices)
+#     score_map, geo_map, ignored_map, rotated_rects, rois= get_score_geo(img, vertices, labels, 1/4, 640)
+#     y_true, geo_true, y_pred, geo_pred = 
+if __name__ == "__main__":
+    import cv2
+    import numpy as np
+    import matplotlib.pyplot as plt
+    from utils import get_score_geo
+    img = cv2.imread("F:/project_2/New_folder/data/downloads/7e3c00ff85bb6ce535aa.jpg")
+    h,w = img.shape[:2]
+    img = cv2.resize(img,(640,640))
+    vertices= []
+    labels = []
+    count = 0
+    
+    with open('C:/Users/thinh/Desktop/example.csv','r',encoding='utf-8') as op:
+        for line in op:
+            bbox = np.int32(line.strip('\n').split(','))
+            bbox[1::2]= bbox[1::2]*640/h
+            bbox[::2]= bbox[::2]*640/w
+            vertices.append(bbox)
+            labels.append(count)
+            count +=1
+    vertices = np.array(vertices)
+    score_map, geo_map, ignored_map, rotated_rects, rois= get_score_geo(img, vertices, labels, 1/4, 640)
+    score_map = torch.tensor(score_map)
+    geo_map = torch.tensor(geo_map.transpose((-1,0,1))).unsqueeze(0)
+    score_map_cp =score_map.clone()
+    geo_map_cp = geo_map.clone()
+    geo_map_cp += torch.rand(1,5,160,160)*0.1
+    ignored_map_cp = ignored_map.copy()
+    rotated_rects_cp = rotated_rects.copy()
+    loss_func = FOTSLoss({'model':{'mode':'detection'}})
+    loss_dict = loss_func(score_map,score_map_cp,geo_map,geo_map_cp,geo_map_cp,geo_map_cp,score_map)
+    loss =  loss_dict['cls_loss'] + loss_dict['reg_loss']
+    print(loss)
+    plt.imshow(score_map)
+    plt.show()
+    plt.imshow(geo_map[0,:,:,2])
+    plt.show()
